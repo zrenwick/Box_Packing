@@ -37,8 +37,16 @@
 % % Email : robertoolmi at gmail.com
 % % --------------------------------
 
-function x=findMIS(AD,priority)
-
+function x=findMIS(varargin)
+% Call using x=findMIS(AD, priority)
+global AD priority depth
+if(~isempty(varargin))
+    AD = varargin{1};
+    priority = varargin{2};
+    depth = 0;
+end
+depth = depth+1;
+disp(depth)
 %M is the adjacency matrix of the constraint network
 [N M]=size(AD);
 if N~=M
@@ -90,7 +98,8 @@ AD(:,assigned)=[];
 nID(assigned)=[];
 priority(assigned)=[];
 if numel(AD)
-    x(nID)=findMIS(AD,priority);
+    clearvars -except x nID
+    x(nID)=findMIS();
 end
 % % % --------------------------------
 % % % Author: Dr. Roberto Olmi

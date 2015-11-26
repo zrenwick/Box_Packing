@@ -3,23 +3,20 @@
 % 11/(08,09)/15
 clear all; close all; clc
 
-if(exist('is_edge_fast','file')~=3)
-    mex is_edge_fast.c   %compile mex if it already hasn't been
-end
 profile on
 tic
 %% Pre-Processing
-P = cubic_grid([0 15; 0 10; 0 10]); % rectangular prism for testing
-% load('P.mat');
- Q = perms([4 2 1])'; % set of orientations
- V = find_vertices(P,Q);
- E = find_edges_fast(V);
-% keyboard
-%load('E.mat');
-priority = ones(1,size(E,2));
-x_star = findMIS(logical(E),priority);
+%P = cubic_grid([0 15; 0 10; 0 10]); % rectangular prism for testing
+load('P.mat');
+Q = perms([4 2 1])'; % set of orientations
+V = find_vertices(P,Q);
+E = find_edges_fast(V);
 
-%E2 = find_edges(V);
+priority = ones(1,size(E,2));
+AD = logical(E);
+
+set(0,'RecursionLimit',1500)
+x_star = findMIS(AD,priority);
 
 %[A,b] = get_constraints(E);
 % 

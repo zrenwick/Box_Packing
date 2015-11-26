@@ -44,9 +44,9 @@ double is_edge( double *V1, double *V2){
         q2[k] = V2[k+3];
     }
     
-    double vert1_raw[n_cell_int*n_dim];
+    double vert1_raw[24];
     memset( vert1_raw, 0, n_cell_int*n_dim*sizeof(double));
-    double vert2_raw[n_cell_int*n_dim];
+    double vert2_raw[24];
     memset( vert2_raw, 0, n_cell_int*n_dim*sizeof(double));
     
     double * vert1 = vert1_raw;
