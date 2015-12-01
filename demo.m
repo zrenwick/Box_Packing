@@ -6,19 +6,19 @@ clear all; close all; clc
 profile on
 tic
 %% Pre-Processing
-%P = cubic_grid([0 5; 0 5; 0 5]); % rectangular prism for testing
-load('P.mat');
-Q = perms([4 4 2])'; % set of orientations
+P = cubic_grid([0 5; 0 5; 0 5]); % rectangular prism for testing
+%load('P.mat');
+Q = perms([4 2 1])'; % set of orientations
 V = find_vertices(P,Q);
+printV(V);
 if(exist('find_edges_fast')~=3)
     mex find_edges_fast.c;
 end
 
-E = find_edges_fast(V);
+AD = find_edges_fast(V);
 
-priority = ones(1,size(E,2));
-AD = logical(E);
-clear E;
+priority = true(1,size(AD,2));
+
 set(0,'RecursionLimit',1500)
 x_star = findMIS(AD,priority);
 

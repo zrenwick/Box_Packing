@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #define vert1(i,j) vert1[(i) + (j)*n_cell_int_1]
 #define vert2(i,j) vert2[(i) + (j)*n_cell_int_2]
@@ -26,7 +27,9 @@
 
 
 
-double is_edge( double *V1, double *V2){
+__global__ void is_edge( double *V, bool *E, n_rows, n_V){
+    int rownum = blockIdx.x%n_V;
+    int colnum = blockIdx.x/n_V;
     int k;
     int kk;
     double p1[3] = {0,0,0};
@@ -88,31 +91,6 @@ double is_edge( double *V1, double *V2){
         }
     }
     
-   /* 
-   mexPrintf("V1\n"); 
-   for(k=0;k<6;k++){
-        mexPrintf("%lf,",V1[k]);
-   }
-   mexPrintf("\n");
-    
-   for(k=0;k<n_cell_int;k++){
-        for(kk=0;kk<3;kk++){
-            mexPrintf("%lf  ",vert1(k,kk));
-        }
-        mexPrintf("\n");
-    }
-    mexPrintf("\n");
-    mexPrintf("\n");
-    */
-    /* create a pointer to the real data in the input matrix  */
-    /*
-    double *A = vert1;
-    
-    double *B = vert2;
-      */
-    
-    
-    
     int vert1_rownum;
     int vert2_rownum;
     int colnum;
@@ -141,23 +119,41 @@ double is_edge( double *V1, double *V2){
     return 0;
 }
 
-
-/* The gateway function */
-void mexFunction( int nlhs, mxArray *plhs[],
-                  int nrhs, const mxArray *prhs[])
+void find_edges_fast(void)
 {
     int n_V;
-    n_V = mxGetN(prhs[0]);
+    int n_rows;
+    FILE * datafp;
+    FILE * valuefp;
+    FILE * outfp;
+    datafp = fopen("v_data.txt","r");
+    valuefp = fopen("v_file.txt","r");
+    outfp = fopen("E.txt","w");
     
+    fscanf(datafp,"%d,%d",&n_rows,&n_V);
+    fclose(datafp);
+    printf("%d,%d",n_rows, n_V);
     
-    double *V = mxGetPr(prhs[0]);
-    plhs[0] = mxCreateDoubleMatrix(n_V,n_V, mxREAL);
+    int k;
+    int kk;
+    double *V = malloc(n_rows*n_V*sizeof(double));
+    for(k=0; k<n_rows*n_V; k++){
+        fscanf(valuefp,"%d,",V[k]);
+    }
+    fclose(valuefp);
+    bool *E = malloc(n_V*n_V*sizeof(bool));
+
+    double *V_d;
+    bool *E_d;
+    // Allocate device memory
+    cudaMalloc((void **)&V_d, n_V*n_rows*sizeof(double));
+    cudaMalloc((void **)&E_d, n_V*n_V*sizeof(bool));
+
+    //Copy data to device memory
+    cudaMemcpy(V_d, &V, n_V*n_rows*sizeof(double));
+
+    is_edge<<<n_V*n_V,1 >>>(V_d,E_d,n_rows,n_V);
     /*
-    mexPrintf("num rows: %d\n",mxGetM(plhs[0]));
-    mexPrintf("num cols: %d\n",mxGetN(plhs[0]));
-     */
-    double *E = mxGetPr(plhs[0]);
-    
     int k;
     int kk;
     int kkk;
@@ -173,4 +169,18 @@ void mexFunction( int nlhs, mxArray *plhs[],
             E(kk,k) = E(k,kk);
         }
     }
+    */
+
+    //Copy result back to local from device
+    cudaMemcpy(&E, E_d, n_V*n_V*sizeof(bool), cudaMemcpyDeviceToHost);
+    cudaFree(E_d);
+    cudaFree(V_d);
+    free(V);
+    for(k=0;k<n_V;k++){
+        for(kk=0;kk<n_V;kk++){
+            fprintf(outfp,"%d,",E(k,kk));
+        }
+        fprintf(outfp,"\n");
+    }
+    fclose(outfp)
 }
